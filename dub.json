@@ -1,0 +1,16 @@
+{
+    "name": "dtext",
+    "description": "A library providing a formatter and logger for D",
+    "dflags": [ "-preview=in" ],
+
+    "configurations": [
+        {
+            "name": "library",
+            "targetType": "library"
+        },
+        {
+            "name": "unittest",
+            "dflags": [ "-checkaction=context", "-allinst" ]
+        }
+    ]
+}

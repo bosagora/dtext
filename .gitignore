@@ -1,0 +1,17 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/dtext
+dtext.so
+dtext.dylib
+dtext.dll
+dtext.a
+dtext.lib
+dtext-test-*
+*.exe
+*.o
+*.obj
+*.lst
+libdtext.a
+*~
