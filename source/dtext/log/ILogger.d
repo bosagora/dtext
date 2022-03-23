@@ -155,7 +155,7 @@ interface ILogger
             `true` if this logger is enabed for the specified `Level`
 
         Params:
-            `Level` to test for, defaults to `Level.Fatal`.
+            level = `Level` to test for, defaults to `Level.Fatal`.
 
     ***************************************************************************/
 

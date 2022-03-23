@@ -293,7 +293,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
          Propagates the property to all child loggers.
 
          Params:
-            Property = property to set
+            property = property to set
             T = type of the property
             parent_name = name of the parent logger
             value = value to set
