@@ -109,3 +109,12 @@ For example, for a `Logger` that is enabled for `Verbose` level,
 calling `log.trace` will be  a no-op.
 
 The default `Level` is `Level.Info`.
+
+### Limitations
+
+The Formatter is currently not CTFE-able, not does it support passing a `FormatSpec`-like
+struct to a `toString` method.
+
+The `Logger` and `Formatter` alike are not attributes-friendly, and currently will not
+play along well with them. As a compromise, `@safe` currently works,
+although it wrongly apply `@trusted` to the user-provided arguments.
