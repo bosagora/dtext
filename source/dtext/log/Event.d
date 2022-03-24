@@ -43,7 +43,7 @@ public struct LogEvent
     public ILogger.Level   level;
 
     /// Name of the logger emitting this event
-    public const(char)[]   name;
+    public string          name;
 
     /// Host of the Logger emitting this event
     public ILogger.Context host;

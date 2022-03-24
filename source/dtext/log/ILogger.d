@@ -61,9 +61,11 @@ interface ILogger
     public enum Option : uint
     {
         /// Use the `Logger` ancestors' `Appender` as well as the `Logger`'s own
-        Additive     = (1 << 0),
+        Additive       = (1 << 0),
         /// Count emitted event towards the global stats
-        CollectStats = (1 << 1),
+        CollectStats   = (1 << 1),
+        /// Use function names instead of logger name for `Event.name`
+        FunctionOrigin = (1 << 2),
     }
 
     /// Internal struct to associate a `Level` with its name
@@ -240,13 +242,14 @@ interface ILogger
             exp   = Lazily evaluated message string
                     If the `level` is not enabled for this logger, it won't
                     be evaluated.
+            func = Function from which the call originated
 
         Returns:
             `this` for easy chaining
 
     ***************************************************************************/
 
-    public ILogger append (Level level, lazy const(char)[] exp);
+    public ILogger append (Level level, lazy const(char)[] exp, string func = __FUNCTION__);
 }
 
 unittest
