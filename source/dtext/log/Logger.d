@@ -62,12 +62,7 @@ version (unittest)
     import dtext.Test;
 }
 
-/*******************************************************************************
-
-    These represent the standard LOG4J event levels.
-
-*******************************************************************************/
-
+/// Convenience alias to available log level, see `ILogger.Level`
 public alias ILogger.Level Level;
 
 
