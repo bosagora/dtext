@@ -27,32 +27,36 @@ version (unittest)
 
 /*******************************************************************************
 
-   A simple layout, prefixing each message with the log level and
-   the name of the logger.
+    A simple layout, prefixing each message with the log level and
+    the name of the logger.
 
-   Example:
-   ------
-   import dtext.log.layout.LayoutSimple;
-   import dtext.log.Logger;
-   import dtext.log.AppendConsole;
+    Example:
+    ------
+    module foobar;
 
+    import dtext.log.layout.LayoutSimple;
+    import dtext.log.Logger;
+    import dtext.log.AppendConsole;
 
-   Log.root.clear;
-   Log.root.add(new AppendConsole(new LayoutSimple));
+    void main ()
+    {
+        Log.root.clear;
+        Log.root.add(new AppendConsole(new LayoutSimple));
 
-   auto logger = Log.lookup("Example");
+        auto logger = Log.lookup("Example");
 
-   logger.trace("Trace example");
-   logger.error("Error example");
-   logger.fatal("Fatal example");
-   -----
+        logger.trace("Trace example");
+        logger.error("Error example");
+        logger.fatal("Fatal example");
+    }
+    -----
 
-   Produced output:
-   -----
-   Trace [Example] - Trace example
-   Error [Example] - Error example
-   Fatal [Example] - Fatal example
-   ----
+    Produced output:
+    -----
+    Trace [Example] - Trace example
+    Error [Example] - Error example
+    Fatal [Example] - Fatal example
+    ----
 
 *******************************************************************************/
 
