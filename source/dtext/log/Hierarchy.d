@@ -24,17 +24,17 @@
 module dtext.log.Hierarchy;
 
 import std.exception: assumeUnique;
-import dtext.log.ILogger;
+import dtext.log.Logger;
 
 
 /// Ditto
-package class HierarchyT (LoggerT) : ILogger.Context
+package class Hierarchy : Logger.Context
 {
-    private LoggerT             root_;
+    private Logger              root_;
     private string              label_,
                                 address_;
-    private ILogger.Context     context_;
-    private LoggerT[string]     loggers;
+    private Logger.Context      context_;
+    private Logger[string]      loggers;
 
 
     /***************************************************************************
@@ -49,7 +49,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
         this.address_ = "network";
 
         // insert a root node; the root has an empty name
-        this.root_ = new LoggerT(this, "");
+        this.root_ = new Logger(this, "");
         this.context_ = this;
     }
 
@@ -82,7 +82,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    final bool enabled (ILogger.Level level, ILogger.Level test)
+    final bool enabled (Logger.Level level, Logger.Level test)
     {
         return test >= level;
     }
@@ -118,7 +118,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    final ILogger.Context context ()
+    final Logger.Context context ()
     {
         return this.context_;
     }
@@ -133,7 +133,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    final void context (ILogger.Context context)
+    final void context (Logger.Context context)
     {
         this.context_ = context;
     }
@@ -144,28 +144,28 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    final LoggerT root ()
+    final Logger root ()
     {
         return this.root_;
     }
 
     /***************************************************************************
 
-        Return the instance of a LoggerT with the provided label.
+        Return the instance of a Logger with the provided label.
         If the instance does not exist, it is created at this time.
 
         Note that an empty label is considered illegal, and will be ignored.
 
     ***************************************************************************/
 
-    final LoggerT lookup (in char[] label)
+    final Logger lookup (in char[] label)
     {
         if (!label.length)
             return null;
 
         return this.inject(
             label,
-            (in char[] name) { return new LoggerT(this, name.idup); }
+            (in char[] name) { return new Logger(this, name.idup); }
             );
     }
 
@@ -175,7 +175,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    final int opApply (scope int delegate(ref LoggerT) dg)
+    final int opApply (scope int delegate(ref Logger) dg)
     {
         int ret;
 
@@ -187,13 +187,13 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     /***************************************************************************
 
-        Return the instance of a LoggerT with the provided label.
+        Return the instance of a Logger with the provided label.
         If the instance does not exist, it is created at this time.
 
     ***************************************************************************/
 
-    private LoggerT inject (in char[] label,
-                            scope LoggerT delegate(in char[] name) dg)
+    private Logger inject (in char[] label,
+                           scope Logger delegate(in char[] name) dg)
     {
         // try not to allocate unless you really need to
         char[255] stack_buffer;
@@ -244,10 +244,10 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    private void insert (LoggerT l)
+    private void insert (Logger l)
     {
-        LoggerT prev,
-                curr = this.root;
+        Logger prev,
+               curr = this.root;
 
         while (curr)
         {
@@ -282,7 +282,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    private void update (LoggerT changed, bool force = false)
+    private void update (Logger changed, bool force = false)
     {
         foreach (logger; this)
             this.propagate(logger, changed, force);
@@ -320,7 +320,7 @@ package class HierarchyT (LoggerT) : ILogger.Context
 
     ***************************************************************************/
 
-    private void propagate (LoggerT logger, LoggerT changed, bool force = false)
+    private void propagate (Logger logger, Logger changed, bool force = false)
     {
         // is the changed instance a better match for our parent?
         if (logger.isCloserAncestor(changed))
