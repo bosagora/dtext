@@ -65,6 +65,8 @@ version (unittest)
 /// Convenience alias to available log level, see `ILogger.Level`
 public alias ILogger.Level Level;
 
+/// Convenience alias
+public alias LogOption = ILogger.Option;
 
 /*******************************************************************************
 
@@ -420,8 +422,8 @@ public final class Logger : ILogger
     private char[ ]         buffer_;
     /// `Level` at which this `Logger` is configured
     package Level           level_;
-    /// When `true`, this `Logger` will use its ancestors `Appender`s as well
-    private bool            additive_;
+    /// Options enabled for this `Logger`
+    package uint            options_;
     /// Indicator if the log emits should be counted towards global stats.
     package bool            collect_stats;
 
@@ -441,7 +443,7 @@ public final class Logger : ILogger
     {
         this.host_ = host;
         this.level_ = Level.Trace;
-        this.additive_ = true;
+        this.options_ = LogOption.Additive;
         this.collect_stats = true;
         this.name_ = name;
         this.buffer_ = new char[](2048);
@@ -668,7 +670,7 @@ public final class Logger : ILogger
 
     public bool additive ()
     {
-        return this.additive_;
+        return (this.options_ & LogOption.Additive);
     }
 
     /***************************************************************************
@@ -685,7 +687,10 @@ public final class Logger : ILogger
 
     public Logger additive (bool enabled)
     {
-        this.additive_ = enabled;
+        if (enabled)
+            this.options_ |= LogOption.Additive;
+        else
+            this.options_ &= ~LogOption.Additive;
         return this;
     }
 
@@ -862,7 +867,7 @@ public final class Logger : ILogger
                 appender = appender.next;
             }
             // process all ancestors
-        } while (links.additive_ && ((links = links.parent) !is null));
+        } while (links.additive() && ((links = links.parent) !is null));
 
         // If the event was emitted to at least one appender, and the
         // collecting stats for this log is enabled, increment the

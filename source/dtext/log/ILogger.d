@@ -56,6 +56,14 @@ interface ILogger
         None,
     };
 
+    /// List of options that can be set on a `Logger`
+    /// Those are used as flags (bitwise-ORed together).
+    public enum Option : uint
+    {
+        /// Use the `Logger` ancestors' `Appender` as well as the `Logger`'s own
+        Additive = (1 << 0),
+    }
+
     /// Internal struct to associate a `Level` with its name
     private struct Pair
     {
