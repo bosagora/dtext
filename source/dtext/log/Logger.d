@@ -476,12 +476,13 @@ public final class Logger : ILogger
                   See `dtext.format.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void dbg (Args...) (in char[] fmt, Args args)
+    public void dbg (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Debug, fmt, args);
+        this.format!Args(Level.Debug, fmt, args, func);
     }
 
     /***************************************************************************
@@ -494,12 +495,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void trace (Args...) (in char[] fmt, Args args)
+    public void trace (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Trace, fmt, args);
+        this.format!Args(Level.Trace, fmt, args, func);
     }
 
     /***************************************************************************
@@ -512,12 +514,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void verbose (Args...) (in char[] fmt, Args args)
+    public void verbose (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Debug, fmt, args);
+        this.format!Args(Level.Debug, fmt, args, func);
     }
 
     /***************************************************************************
@@ -530,12 +533,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void info (Args...) (in char[] fmt, Args args)
+    public void info (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Info, fmt, args);
+        this.format!Args(Level.Info, fmt, args, func);
     }
 
     /***************************************************************************
@@ -548,12 +552,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void warn (Args...) (in char[] fmt, Args args)
+    public void warn (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Warn, fmt, args);
+        this.format!Args(Level.Warn, fmt, args, func);
     }
 
     /***************************************************************************
@@ -566,12 +571,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void error (Args...) (in char[] fmt, Args args)
+    public void error (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Error, fmt, args);
+        this.format!Args(Level.Error, fmt, args, func);
     }
 
     /***************************************************************************
@@ -584,12 +590,13 @@ public final class Logger : ILogger
                   See `ocean.text.convert.Formatter` documentation for
                   more informations.
             args = Arguments to format according to `fmt`.
+            func = Function from which the call originated
 
     ***************************************************************************/
 
-    public void fatal (Args...) (in char[] fmt, Args args)
+    public void fatal (Args...) (in char[] fmt, Args args, string func = __FUNCTION__)
     {
-        this.format(Level.Fatal, fmt, args);
+        this.format!Args(Level.Fatal, fmt, args, func);
     }
 
     /***************************************************************************
@@ -762,21 +769,25 @@ public final class Logger : ILogger
             exp   = Lazily evaluated string.
                     If the provided `level` is not enabled, `exp` won't be
                     evaluated at all.
+            func = Function from which the call originated
 
         Returns:
             `this`
 
     ***************************************************************************/
 
-    public Logger append (Level level, lazy const(char)[] exp) @trusted
+    public Logger append (
+        Level level, lazy const(char)[] exp, string func = __FUNCTION__)
+        @trusted
     {
         import std.datetime.systime;
 
         if (this.host_.context.enabled(level_, level))
         {
+            const name = this.getOption(LogOption.FunctionOrigin) ? func :
+                (this.name_.length ? this.name_[0..$-1] : "root");
             auto event = LogEvent(
-                level, this.name_.length ? this.name_[0..$-1] : "root",
-                this.host_, Clock.currTime(), exp);
+                level, name, this.host_, Clock.currTime(), exp);
             this.append(event);
         }
         return this;
@@ -856,18 +867,20 @@ public final class Logger : ILogger
             level = Message severity
             fmt   = Format string to use, see `ocean.text.convert.Formatter`
             args  = Arguments to format according to `fmt`.
+            func  = The name of the function from which the event originated
 
     ***************************************************************************/
 
-    public void format (Args...) (Level level, in char[] fmt, Args args) @safe
+    public void format (Args...) (
+        Level level, in char[] fmt, Args args, string func = __FUNCTION__) @safe
     {
         static if (Args.length == 0)
-            this.append(level, fmt);
+            this.append(level, fmt, func);
         else
         {
             // If the buffer has length 0 / is null, we just don't log anything
             if (this.buffer_.length)
-                this.append(level, snformat(this.buffer_, fmt, args));
+                this.append(level, snformat(this.buffer_, fmt, args), func);
         }
     }
 
@@ -987,12 +1000,12 @@ unittest
         public struct Event
         {
             Logger.Level level;
-            const(char)[] name;
+            string name;
             const(char)[] message;
             char[128] buffer;
         }
 
-        private Event[6] buffers;
+        private Event[7] buffers;
         private size_t index;
 
         public override Mask mask () { Mask m = 42; return m; }
@@ -1011,6 +1024,7 @@ unittest
     Logger log = new Logger(Log.hierarchy(), "dummy.");
     log.setOption(LogOption.Additive, false);
     log.add(appender);
+    log.level = Level.Debug;
 
     testNoAlloc({
             scope obj = new Object;
@@ -1022,6 +1036,8 @@ unittest
             log.fatal("{} - {} - {} - {}",
                       "This is some arg fmt", 42, obj, 1337.0f);
             log.format(Logger.Level.Info, "Just some {}", "more allocation tests");
+            assert(log.setOption(LogOption.FunctionOrigin, true) == false);
+            log.dbg("Make sure that func forwarding works properly");
     }());
 
     assert(appender.buffers[0].level == Logger.Level.Trace);
@@ -1030,6 +1046,7 @@ unittest
     assert(appender.buffers[3].level == Logger.Level.Error);
     assert(appender.buffers[4].level == Logger.Level.Fatal);
     assert(appender.buffers[5].level == Logger.Level.Info);
+    assert(appender.buffers[6].level == Logger.Level.Debug);
 
     assert(appender.buffers[0].message ==
            "If you can keep your head when all about you, " ~
@@ -1043,8 +1060,12 @@ unittest
     assert(appender.buffers[4].message ==
            "This is some arg fmt - 42 - object.Object - 1337.00");
     assert(appender.buffers[5].message == "Just some more allocation tests");
+    assert(appender.buffers[6].message == "Make sure that func forwarding works properly");
 
     // Test logger names
     foreach (idx; 0 .. 6)
         assert(appender.buffers[idx].name == "dummy");
+    // Note: This test will break if the line number change, so might need to be frequently updated
+    // (as the function name depends on the line of the unittest).
+    assert(appender.buffers[6].name == "dtext.log.Logger.__unittest_L996_C1.__lambda4");
 }
