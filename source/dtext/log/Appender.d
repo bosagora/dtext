@@ -262,7 +262,7 @@ unittest
     LogEvent event = {
         level: ILogger.Level.Warn,
         name: "Barney",
-        host: new HierarchyT!(Logger)("test"),
+        host: new Hierarchy("test"),
 // https://github.com/dlang/druntime/pull/3752
 //        time: LogEvent.startTime + 420.msecs,
         time: LogEvent.startTime,

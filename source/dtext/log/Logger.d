@@ -190,7 +190,7 @@ public struct Log
     }
 
     /// Stores all the existing `Logger` in a hierarchical manner
-    private static HierarchyT!(Logger) hierarchy_;
+    private static Hierarchy hierarchy_;
 
     /// Logger stats
     private static Stats logger_stats;
@@ -272,18 +272,18 @@ public struct Log
         Return (and potentially initialize) the hierarchy singleton
 
         Logger themselves have little knowledge about their hierarchy.
-        Everything is handled by a `HierarchyT!(Logger)` instance, which is
+        Everything is handled by a `Hierarchy` instance, which is
         stored as a singleton in this `struct`, and for which convenient
         functions are provided.
         This function returns said singleton, and initialize it on first call.
 
     ***************************************************************************/
 
-    public static HierarchyT!(Logger) hierarchy ()
+    public static Hierarchy hierarchy ()
     {
         if (This.hierarchy_ is null)
         {
-            This.hierarchy_ = new HierarchyT!(Logger)("ocean");
+            This.hierarchy_ = new Hierarchy("ocean");
         }
         return This.hierarchy_;
     }
@@ -407,7 +407,7 @@ public final class Logger : ILogger
     public alias Level.Fatal Fatal;     /// Ditto
 
     /// The hierarchy that host this logger (most likely Log.hierarchy).
-    private HierarchyT!(Logger) host_;
+    private Hierarchy       host_;
     /// Next logger in the list, maintained by Hierarchy
     package Logger          next;
     /// Parent of this logger (maintained by Hierarchy)
@@ -437,7 +437,7 @@ public final class Logger : ILogger
 
     ***************************************************************************/
 
-    package this (HierarchyT!(Logger) host, string name)
+    package this (Hierarchy host, string name)
     {
         this.host_ = host;
         this.level_ = Level.Trace;
