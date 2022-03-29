@@ -206,29 +206,30 @@ interface ILogger
 
     /***************************************************************************
 
-        Returns:
-            `true` if the logger is additive.
-            Additive loggers walk through ancestors looking for more appenders
+        Test whether an option is enabled or not
+
+        Loggers support different options, listed in `LogOption`.
+        This function returns whether a certain option is enabled or not.
 
     ***************************************************************************/
 
-    public bool additive ();
+    public bool getOption (Option option) const scope @safe pure nothrow @nogc;
 
     /***************************************************************************
 
-        Set the additive status of this logger
-
-        Additive loggers walk through ancestors looking for more appenders
+        Enable or disable a certain option
 
         Params:
-            enabled = Whereas this logger is additive.
+            option = The option to enable/disable
+            enabled = If `true`, enable the option, otherwise disable it
+            propagate = Whether the option should be propagated to child loggers
 
         Returns:
-            `this` for easy chaining
+            `true` if the option was previously enabled, `false` otherwise.
 
     ***************************************************************************/
 
-    public ILogger additive (bool enabled);
+    public bool setOption (Option option, bool enabled, bool propagate = false);
 
     /***************************************************************************
 
