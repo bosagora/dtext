@@ -290,6 +290,27 @@ package class Hierarchy : Logger.Context
 
     /***************************************************************************
 
+         Propagates the `Level` to all child loggers.
+
+         Params:
+            parent = Name of the parent logger
+            level = New `Level` value to apply
+
+    ***************************************************************************/
+
+    package void propagateLevel (string parent, Logger.Level value)
+    {
+        foreach (log; this)
+        {
+            if (log.isChildOf(parent))
+            {
+                log.level_ = value;
+            }
+        }
+    }
+
+    /***************************************************************************
+
          Propagates the property to all child loggers.
 
          Params:

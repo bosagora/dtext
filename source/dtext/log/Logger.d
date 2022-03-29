@@ -654,7 +654,7 @@ public final class Logger : ILogger
 
         if (propagate)
         {
-            this.host_.propagateValue!("level_")(this.name_, level);
+            this.host_.propagateLevel(this.name_, level);
         }
 
         return this;
