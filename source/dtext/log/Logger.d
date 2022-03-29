@@ -965,7 +965,7 @@ unittest
     static immutable TestStr = "Ce qui se conçoit bien s'énonce clairement - Et les mots pour le dire arrivent aisément";
     scope appender = new Buffer();
     char[32] log_buffer;
-    Logger log = new Logger(Log.hierarchy(), "dummy");
+    Logger log = new Logger(Log.hierarchy(), "dummy.");
     log.setOption(LogOption.Additive, false);
     log.add(appender).buffer(log_buffer);
     log.info("{}", TestStr);
@@ -984,7 +984,13 @@ unittest
 {
     static class StaticBuffer : Appender
     {
-        public struct Event { Logger.Level level; const(char)[] message; char[128] buffer; }
+        public struct Event
+        {
+            Logger.Level level;
+            const(char)[] name;
+            const(char)[] message;
+            char[128] buffer;
+        }
 
         private Event[6] buffers;
         private size_t index;
@@ -996,12 +1002,13 @@ unittest
             assert(this.index < this.buffers.length);
             auto str = snformat(this.buffers[this.index].buffer, "{}", e.msg);
             this.buffers[this.index].message = str;
+            this.buffers[this.index].name = e.name;
             this.buffers[this.index++].level = e.level;
         }
     }
 
     scope appender = new StaticBuffer;
-    Logger log = new Logger(Log.hierarchy(), "dummy");
+    Logger log = new Logger(Log.hierarchy(), "dummy.");
     log.setOption(LogOption.Additive, false);
     log.add(appender);
 
@@ -1036,4 +1043,8 @@ unittest
     assert(appender.buffers[4].message ==
            "This is some arg fmt - 42 - object.Object - 1337.00");
     assert(appender.buffers[5].message == "Just some more allocation tests");
+
+    // Test logger names
+    foreach (idx; 0 .. 6)
+        assert(appender.buffers[idx].name == "dummy");
 }
