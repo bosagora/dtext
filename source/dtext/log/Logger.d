@@ -657,38 +657,27 @@ public final class Logger : ILogger
         return this;
     }
 
-    /***************************************************************************
-
-        Is this logger additive configured as additive ?
-
-        Additive loggers should walk ancestors looking for more appenders.
-
-    ***************************************************************************/
-
-    public bool additive ()
+    /// See `ILogger.getOption`
+    public override bool getOption (LogOption option)
+        const scope @safe nothrow @nogc pure
     {
-        return (this.options_ & LogOption.Additive);
+        return !!(this.options_ & option);
     }
 
-    /***************************************************************************
-
-        Set the additive status of this logger. See bool additive().
-
-        Params:
-            enabled = new value for the additive property.
-
-        Returns:
-            `this`
-
-    ***************************************************************************/
-
-    public Logger additive (bool enabled)
+    /// See `ILogger.setOption`
+    public override bool setOption (LogOption option, bool enabled, bool propagate = false)
     {
+        const previous = this.getOption(option);
+
         if (enabled)
-            this.options_ |= LogOption.Additive;
+            this.options_ |= option;
         else
-            this.options_ &= ~LogOption.Additive;
-        return this;
+            this.options_ &= ~option;
+
+        if (propagate)
+            this.host_.propagateOption(this.name_, option, enabled);
+
+        return previous;
     }
 
     /***************************************************************************
@@ -762,32 +751,6 @@ public final class Logger : ILogger
     {
         buffer_ = buf;
         return this;
-    }
-
-    /***************************************************************************
-
-        Toggles the stats collecting for this logger and optionally
-        for all its descendants.
-
-        Params:
-            value = indicator if the stats collection for this logger should
-                    happen
-            propagate = should we propagate this change to all children
-                        loggers
-
-    ***************************************************************************/
-
-    public void collectStats (bool value, bool propagate)
-    {
-        if (value)
-            this.options_ |= LogOption.CollectStats;
-        else
-            this.options_ &= LogOption.CollectStats;
-
-        if (propagate)
-        {
-            this.host_.propagateOption(this.name_, LogOption.CollectStats, value);
-        }
     }
 
     /***************************************************************************
@@ -867,12 +830,12 @@ public final class Logger : ILogger
                 appender = appender.next;
             }
             // process all ancestors
-        } while (links.additive() && ((links = links.parent) !is null));
+        } while (links.getOption(LogOption.Additive) && ((links = links.parent) !is null));
 
         // If the event was emitted to at least one appender, and the
         // collecting stats for this log is enabled, increment the
         // stats counters
-        if ((this.options_ & LogOption.CollectStats) && event_emitted)
+        if (this.getOption(LogOption.CollectStats) && event_emitted)
         {
             Log.logger_stats.accumulate(event.level);
         }
@@ -1002,8 +965,9 @@ unittest
     static immutable TestStr = "Ce qui se conçoit bien s'énonce clairement - Et les mots pour le dire arrivent aisément";
     scope appender = new Buffer();
     char[32] log_buffer;
-    Logger log = (new Logger(Log.hierarchy(), "dummy"))
-        .additive(false).add(appender).buffer(log_buffer);
+    Logger log = new Logger(Log.hierarchy(), "dummy");
+    log.setOption(LogOption.Additive, false);
+    log.add(appender).buffer(log_buffer);
     log.info("{}", TestStr);
     log.error(TestStr);
     assert(appender.result.length == 2);
@@ -1037,9 +1001,9 @@ unittest
     }
 
     scope appender = new StaticBuffer;
-    Logger log = (new Logger(Log.hierarchy(), "dummy"))
-        .additive(false)
-        .add(appender);
+    Logger log = new Logger(Log.hierarchy(), "dummy");
+    log.setOption(LogOption.Additive, false);
+    log.add(appender);
 
     testNoAlloc({
             scope obj = new Object;
