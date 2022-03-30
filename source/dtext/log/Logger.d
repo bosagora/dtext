@@ -424,8 +424,6 @@ public final class Logger : ILogger
     package Level           level_;
     /// Options enabled for this `Logger`
     package uint            options_;
-    /// Indicator if the log emits should be counted towards global stats.
-    package bool            collect_stats;
 
     /***************************************************************************
 
@@ -443,8 +441,7 @@ public final class Logger : ILogger
     {
         this.host_ = host;
         this.level_ = Level.Trace;
-        this.options_ = LogOption.Additive;
-        this.collect_stats = true;
+        this.options_ = LogOption.Additive | LogOption.CollectStats;
         this.name_ = name;
         this.buffer_ = new char[](2048);
     }
@@ -782,11 +779,14 @@ public final class Logger : ILogger
 
     public void collectStats (bool value, bool propagate)
     {
-        this.collect_stats = value;
+        if (value)
+            this.options_ |= LogOption.CollectStats;
+        else
+            this.options_ &= LogOption.CollectStats;
 
         if (propagate)
         {
-            this.host_.propagateValue!("collect_stats")(this.name_, value);
+            this.host_.propagateOption(this.name_, LogOption.CollectStats, value);
         }
     }
 
@@ -872,7 +872,7 @@ public final class Logger : ILogger
         // If the event was emitted to at least one appender, and the
         // collecting stats for this log is enabled, increment the
         // stats counters
-        if (this.collect_stats && event_emitted)
+        if ((this.options_ & LogOption.CollectStats) && event_emitted)
         {
             Log.logger_stats.accumulate(event.level);
         }

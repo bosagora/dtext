@@ -61,7 +61,9 @@ interface ILogger
     public enum Option : uint
     {
         /// Use the `Logger` ancestors' `Appender` as well as the `Logger`'s own
-        Additive = (1 << 0),
+        Additive     = (1 << 0),
+        /// Count emitted event towards the global stats
+        CollectStats = (1 << 1),
     }
 
     /// Internal struct to associate a `Level` with its name

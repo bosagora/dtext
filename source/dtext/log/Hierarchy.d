@@ -314,21 +314,22 @@ package class Hierarchy : Logger.Context
          Propagates the property to all child loggers.
 
          Params:
-            property = property to set
-            T = type of the property
-            parent_name = name of the parent logger
-            value = value to set
+            parent = Name of the parent logger
+            option = Option to set
+            value = Value to set `option` to
 
     ***************************************************************************/
 
-    package void propagateValue (string property, T)
-        (string parent_name, T value)
+    package void propagateOption (string parent, LogOption option, bool value)
     {
         foreach (log; this)
         {
-            if (log.isChildOf (parent_name))
+            if (log.isChildOf(parent))
             {
-                mixin("log." ~ property ~ " = value;");
+                if (value)
+                    log.options_ |= option;
+                else
+                    log.options_ &= ~option;
             }
         }
     }
@@ -354,7 +355,10 @@ package class Hierarchy : Logger.Context
             if (force)
             {
                 logger.level_ = changed.level;
-                logger.collect_stats = changed.collect_stats;
+                if (changed.options_ & LogOption.CollectStats)
+                    logger.options_ |= LogOption.CollectStats;
+                else
+                    logger.options_ &= !LogOption.CollectStats;
             }
         }
     }
