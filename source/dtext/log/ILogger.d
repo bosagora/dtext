@@ -54,7 +54,7 @@ interface ILogger
         Fatal,
         /// No message should be output
         None,
-    };
+    }
 
     /// List of options that can be set on a `Logger`
     /// Those are used as flags (bitwise-ORed together).
