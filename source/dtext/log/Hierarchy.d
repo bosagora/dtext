@@ -294,7 +294,7 @@ package class Hierarchy : Logger.Context
 
          Params:
             parent = Name of the parent logger
-            level = New `Level` value to apply
+            value = New `Level` value to apply
 
     ***************************************************************************/
 
