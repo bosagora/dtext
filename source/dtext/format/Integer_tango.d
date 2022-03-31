@@ -96,7 +96,7 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
         }
     }
 
-    Unqual!N i = i_;
+    ulong i;
     FormatStyle index;
     int len = cast(int) dst.length;
 
@@ -108,35 +108,43 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
             case 'D':
             case 'g':
             case 'G':
-                if (i < 0)
+                if (i_ < 0)
                     index = FormatStyle.NegativeB10;
                 else if (pre is ' ')
                     index = FormatStyle.JustifiedB10;
                 else if (pre is '+')
                     index = FormatStyle.PositiveB10;
                 /// Otherwise, keep `FormatStyle.DefaultB10`
-                goto case;
+                i = i_ >= 0 ? i_ : -i_;
+                pre = '#';
+                break;
+
             case 'u':
             case 'U':
+                i = reinterpretInteger!(ulong)(i_);
                 pre = '#';
                 break;
 
             case 'b':
             case 'B':
                 index = FormatStyle.Binary;
+                i = reinterpretInteger!(ulong)(i_);
                 break;
 
             case 'o':
             case 'O':
                 index = FormatStyle.Octal;
+                i = reinterpretInteger!(ulong)(i_);
                 break;
 
             case 'x':
                 index = FormatStyle.LowercaseB16;
+                i = reinterpretInteger!(ulong)(i_);
                 break;
 
             case 'X':
                 index = FormatStyle.UppercaseB16;
+                i = reinterpretInteger!(ulong)(i_);
                 break;
 
             default:
@@ -156,22 +164,9 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
         // convert number to text
         auto p = dst.ptr + len;
 
-        // Base 10 formatting
-        if (index <= 3 && index)
-        {
-            assert((i >= 0 && radix > 0) || (i < 0 && radix < 0));
-
-            do
-                *--p = numbers[abs(i % radix)];
-            while ((i /= radix) && --len);
-         }
-        else // Those numbers are not signed
-        {
-            ulong v = reinterpretInteger!(ulong)(i);
-            do
-                *--p = numbers[v % radix];
-            while ((v /= radix) && --len);
-        }
+        do
+            *--p = numbers[i % radix];
+        while ((i /= radix) && --len);
 
         auto prefix = (pre is '#') ? info.prefix : null;
         if (len > prefix.length)
@@ -198,35 +193,6 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 
     return "{output width too small}";
 }
-
-/*******************************************************************************
-
-    Get the absolute value of a number
-
-    The number should not be == `T.min` if `T` is a signed number.
-    Since signed numbers use the two's complement, `-T.min` cannot be
-    represented: It would be `T.max + 1`.
-    Trying to calculate `-T.min` causes an integer overflow and results in
-    `T.min`.
-
-    Params:
-        x = A value between `T.min` (exclusive for signed number) and `T.max`
-
-    Returns:
-        The absolute value of `x` (`|x|`)
-
-*******************************************************************************/
-
-private T abs (T) (T x)
-{
-    static if (T.min < 0)
-    {
-        assert(x != T.min,
-            "abs cannot be called with x == " ~ T.stringof ~ ".min");
-    }
-    return x >= 0 ? x : -x;
-}
-
 
 /*******************************************************************************
 
@@ -300,7 +266,7 @@ public enum FormatStyle
 
 private immutable FormatterInfo[FormatStyle.max + 1] Styles = [
     FormatStyle.DefaultB10:   {  10, null, Lower},
-    FormatStyle.NegativeB10:  { -10, "-" , Lower},
+    FormatStyle.NegativeB10:  {  10, "-" , Lower},
     FormatStyle.JustifiedB10: {  10, " " , Lower},
     FormatStyle.PositiveB10:  {  10, "+" , Lower},
     FormatStyle.Binary:       {   2, "0b", Lower},
