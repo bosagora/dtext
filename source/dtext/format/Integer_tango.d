@@ -140,7 +140,13 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
                 break;
 
             default:
-                return "{unknown format '" ~ type ~ "'}";
+                immutable mlen = "{unknown format 'X'}".length;
+                if (dst.length < mlen)
+                    return "{unknown format}";
+                dst[0 .. mlen - 3] = "{unknown format '";
+                dst[mlen - 3] = type;
+                dst[mlen - 2 .. mlen] = "'}";
+                return dst;
         }
 
         auto info = &Styles[index];
