@@ -31,8 +31,7 @@ import dtext.log.Logger;
 package class Hierarchy : Logger.Context
 {
     private Logger              root_;
-    private string              label_,
-                                address_;
+    private string              label_;
     private Logger.Context      context_;
     private Logger[string]      loggers;
 
@@ -46,7 +45,6 @@ package class Hierarchy : Logger.Context
     this (string hlabel)
     {
         this.label_ = hlabel;
-        this.address_ = "network";
 
         // insert a root node; the root has an empty name
         this.root_ = new Logger(this, "");
@@ -85,30 +83,6 @@ package class Hierarchy : Logger.Context
     final bool enabled (Logger.Level level, Logger.Level test)
     {
         return test >= level;
-    }
-
-    /***************************************************************************
-
-        Return the address of this Hierarchy.
-        This is typically attached when sending events to remote monitors.
-
-    ***************************************************************************/
-
-    final string address ()
-    {
-        return this.address_;
-    }
-
-    /***************************************************************************
-
-        Set the address of this Hierarchy.
-        The address is attached used when sending events to remote monitors.
-
-    ***************************************************************************/
-
-    final void address (string address)
-    {
-        this.address_ = address;
     }
 
     /***************************************************************************
