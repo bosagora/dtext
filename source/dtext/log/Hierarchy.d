@@ -355,10 +355,7 @@ package class Hierarchy : Logger.Context
             if (force)
             {
                 logger.level_ = changed.level;
-                if (changed.options_ & LogOption.CollectStats)
-                    logger.options_ |= LogOption.CollectStats;
-                else
-                    logger.options_ &= !LogOption.CollectStats;
+                logger.options_ = changed.options_;
             }
         }
     }
