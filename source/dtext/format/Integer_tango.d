@@ -72,7 +72,7 @@ import std.traits;
 
  *******************************************************************************/
 
-const(T)[] format(T, N) (T[] dst, N i_, in char[] fmt = null)
+const(char)[] format(N) (char[] dst, N i_, in char[] fmt = null)
 {
     // static assert(isIntegerType!(N),
     //               "Integer_tango.format only supports integers");
@@ -85,7 +85,7 @@ const(T)[] format(T, N) (T[] dst, N i_, in char[] fmt = null)
         type = 'd';
     else
     {
-        type = cast(char) fmt[0];
+        type = fmt[0];
         if (fmt.length > 1)
         {
             auto p = &fmt[1];
@@ -94,15 +94,15 @@ const(T)[] format(T, N) (T[] dst, N i_, in char[] fmt = null)
                 if (*p >= '0' && *p <= '9')
                     width = width * 10 + (*p - '0');
                 else
-                    pre = cast(char) *p;
+                    pre = *p;
             }
         }
     }
 
-    static immutable immutable(T)[] lower = "0123456789abcdef";
-    static immutable immutable(T)[] upper = "0123456789ABCDEF";
+    static immutable string lower = "0123456789abcdef";
+    static immutable string upper = "0123456789ABCDEF";
 
-    alias _FormatterInfo!(immutable(T)) Info;
+    alias _FormatterInfo!(immutable(char)) Info;
 
     static immutable Info[] formats = [
         { 10, null, lower},
@@ -160,7 +160,7 @@ const(T)[] format(T, N) (T[] dst, N i_, in char[] fmt = null)
                 break;
 
             default:
-                return cast(T[])"{unknown format '"~cast(T)type~"'}";
+                return "{unknown format '" ~ type ~ "'}";
         }
 
         auto info = &formats[index];
