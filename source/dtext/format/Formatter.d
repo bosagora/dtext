@@ -550,7 +550,7 @@ private void handle (T) (T v, FormatInfo f, scope FormatterSink sf, scope ElemSi
         // Needs to support base 2 at most, plus an optional prefix
         // of 2 chars max
         char[T.sizeof * 8 + 2] buff = void;
-        se(Integer.format(buff, v, f.format), f);
+        se(Integer.format(buff, v, f.format.length ? f.format : "d"), f);
     }
     // Unsigned integer
     else static if (is(typeof(T.min)) && T.min == 0)
