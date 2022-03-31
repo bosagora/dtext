@@ -199,43 +199,6 @@ public struct Log
 
     /***************************************************************************
 
-        Return the enum value associated with `name`, or a default value
-
-        Params:
-            name = Case-independent string representation of an `ILogger.Level`
-                   If the name is not one of the logger, `def` is returned.
-            def  = Default value to return if no match is found for `name`
-
-        Returns:
-            The `Level` value for `name`, or `def`
-
-    ***************************************************************************/
-
-    public static Level convert (in char[] name, Level def = Level.Trace)
-    {
-        return ILogger.convert(name, def);
-    }
-
-    /***************************************************************************
-
-        Return the name associated with level
-
-        Params:
-            level = The `Level` to get the name for
-
-        Returns:
-            The name associated with `level`.
-
-    ***************************************************************************/
-
-    public static string convert (Level level)
-    {
-        return ILogger.convert(level);
-    }
-
-
-    /***************************************************************************
-
         Return an instance of the named logger
 
         Names should be hierarchical in nature, using dot notation (with '.')
@@ -945,19 +908,6 @@ unittest
     }
 }
 
-unittest
-{
-    assert(Log.convert("info") == Level.Info);
-    assert(Log.convert("Info") == Level.Info);
-    assert(Log.convert("INFO") == Level.Info);
-    assert(Log.convert("FATAL") == Level.Fatal);
-    // Use the default value
-    assert(Log.convert("Info!") == Level.Trace);
-    assert(Log.convert("Baguette", Level.Warn) == Level.Warn);
-    // The first entry in the array
-    assert(Log.convert("trace", Level.Error) == Level.Trace);
-}
-
 // Test that argumentless format call does not shrink the output
 unittest
 {
@@ -1067,5 +1017,5 @@ unittest
         assert(appender.buffers[idx].name == "dummy");
     // Note: This test will break if the line number change, so might need to be frequently updated
     // (as the function name depends on the line of the unittest).
-    assert(appender.buffers[6].name == "dtext.log.Logger.__unittest_L996_C1.__lambda4");
+    assert(appender.buffers[6].name == "dtext.log.Logger.__unittest_L946_C1.__lambda4");
 }
