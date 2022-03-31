@@ -76,7 +76,6 @@ module dtext.format.Formatter;
 
 import Integer = dtext.format.Integer_tango;
 import Float = dtext.format.Float;
-import UTF = dtext.format.UTF;
 
 import std.traits;
 
@@ -530,7 +529,7 @@ private void handle (T) (T v, FormatInfo f, scope FormatterSink sf, scope ElemSi
                     || is(T : const(dchar)[]))
     {
         if (f.flags & Flags.Nested) sf(`"`);
-        UTF.toString(v, (in char[] val) { se(val, f); return val.length; });
+        reencodeUTF(v, (in char[] val) { se(val, f); return val.length; });
         if (f.flags & Flags.Nested) sf(`"`);
     }
     else static if (is(typeof((&v)[0 .. 1]) : const(char)[])
@@ -539,9 +538,9 @@ private void handle (T) (T v, FormatInfo f, scope FormatterSink sf, scope ElemSi
     {
         T[3] b = [ '\'', v, '\'' ];
         if (f.flags & Flags.Nested)
-            UTF.toString(b, (in char[] val) { se(val, f); return val.length; });
+            reencodeUTF(b, (in char[] val) { se(val, f); return val.length; });
         else
-            UTF.toString(b[1 .. 2], (in char[] val) { se(val, f); return val.length; });
+            reencodeUTF(b[1 .. 2], (in char[] val) { se(val, f); return val.length; });
     }
 
     // Signed integer
@@ -1143,4 +1142,87 @@ private template isInfinite (R)
     }
 
     static assert (isInfinite!(Sample));
+}
+
+/*******************************************************************************
+
+  Encode a string of characters into an UTF-8 string, providing one character
+  at a time to the delegate.
+
+  This allow to shift the allocation strategy on the user, which might have
+  more information about the kind of data passed to this function.
+
+  Parameters:
+    input = UTF-8, UTF-16 or UTF-32 encoded string to encode to UTF-8
+    dg    = Output delegate to pass the result to
+
+  Note:
+    Unlike the other `toString` variant, UTF-16 -> UTF-8 doesn't support
+    surrogate pairs and will call `onUnicodeError`.
+
+*******************************************************************************/
+
+public void reencodeUTF (const(char)[] input, scope size_t delegate(in char[]) dg)
+{
+    dg(input);
+}
+
+/// Ditto
+public void reencodeUTF (const(wchar)[] input, scope size_t delegate(in char[]) dg)
+{
+    char[4] buff;
+    foreach (size_t idx, wchar c; input)
+    {
+        if (c < 0x80)
+            dg((cast(const(char)*) &c)[0 .. 1]);
+        else if (c < 0x0800)
+        {
+            buff[0] = cast(char)(0xc0 | ((c >> 6) & 0x3f));
+            buff[1] = cast(char)(0x80 | (c & 0x3f));
+            dg(buff[0 .. 2]);
+        }
+        else if (c < 0xd800 || c > 0xdfff)
+        {
+            buff[0] = cast(char)(0xe0 | ((c >> 12) & 0x3f));
+            buff[1] = cast(char)(0x80 | ((c >> 6)  & 0x3f));
+            buff[2] = cast(char)(0x80 | (c & 0x3f));
+            dg(buff[0 .. 3]);
+        }
+        else
+            dg("{UTF-16 surrogate pair not supported}");
+    }
+}
+
+/// Ditto
+public void reencodeUTF (const(dchar)[] input, scope size_t delegate(in char[]) dg)
+{
+    char[4] buff;
+    foreach (size_t idx, dchar c; input)
+    {
+        if (c < 0x80)
+            dg((cast(const(char)*) &c)[0 .. 1]);
+        else if (c < 0x0800)
+        {
+            buff[0] = cast(char)(0xc0 | ((c >> 6) & 0x3f));
+            buff[1] = cast(char)(0x80 | (c & 0x3f));
+            dg(buff[0 .. 2]);
+        }
+        else if (c < 0x10000)
+        {
+            buff[0] = cast(char)(0xe0 | ((c >> 12) & 0x3f));
+            buff[1] = cast(char)(0x80 | ((c >> 6)  & 0x3f));
+            buff[2] = cast(char)(0x80 | (c & 0x3f));
+            dg(buff[0 .. 3]);
+        }
+        else if (c < 0x110000)
+        {
+            buff[0] = cast(char)(0xf0 | ((c >> 18) & 0x3f));
+            buff[1] = cast(char)(0x80 | ((c >> 12) & 0x3f));
+            buff[2] = cast(char)(0x80 | ((c >> 6)  & 0x3f));
+            buff[3] = cast(char)(0x80 | (c & 0x3f));
+            dg(buff);
+        }
+        else
+            dg("{Invalid UTF-32 char}");
+    }
 }
