@@ -400,7 +400,7 @@ public final class Logger : ILogger
 
     ***************************************************************************/
 
-    package this (Hierarchy host, string name)
+    package this (Hierarchy host, string name) @safe pure nothrow
     {
         this.host_ = host;
         this.level_ = Level.Trace;
