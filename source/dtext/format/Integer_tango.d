@@ -91,97 +91,99 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 
     ulong i;
     FormatStyle index;
-    int len = cast(int) dst.length;
 
-    if (len)
+    if (!dst.length)
+        return "{output width too small}";
+
+    switch (type)
     {
-        switch (type)
+        case 'd':
+        case 'D':
+        case 'g':
+        case 'G':
+            if (i_ < 0)
+                index = FormatStyle.NegativeB10;
+            else if (pre is ' ')
+                index = FormatStyle.JustifiedB10;
+            else if (pre is '+')
+                index = FormatStyle.PositiveB10;
+            /// Otherwise, keep `FormatStyle.DefaultB10`
+            i = i_ >= 0 ? i_ : -i_;
+            pre = '#';
+            break;
+
+        case 'u':
+        case 'U':
+            i = reinterpretInteger!(ulong)(i_);
+            pre = '#';
+            break;
+
+        case 'b':
+        case 'B':
+            index = FormatStyle.Binary;
+            i = reinterpretInteger!(ulong)(i_);
+            break;
+
+        case 'o':
+        case 'O':
+            index = FormatStyle.Octal;
+            i = reinterpretInteger!(ulong)(i_);
+            break;
+
+        case 'x':
+            index = FormatStyle.LowercaseB16;
+            i = reinterpretInteger!(ulong)(i_);
+            break;
+
+        case 'X':
+            index = FormatStyle.UppercaseB16;
+            i = reinterpretInteger!(ulong)(i_);
+            break;
+
+        default:
+            immutable mlen = "{unknown format 'X'}".length;
+            if (dst.length < mlen)
+                return "{unknown format}";
+            dst[0 .. mlen - 3] = "{unknown format '";
+            dst[mlen - 3] = type;
+            dst[mlen - 2 .. mlen] = "'}";
+            return dst;
+    }
+    return formatInternal(dst, i, Styles[index], pre, width);
+}
+
+private const(char)[] formatInternal
+    (char[] dst, ulong i, in FormatterInfo info, char pre, int width)
+    @trusted pure nothrow @nogc
+{
+    // convert number to text
+    int len = cast(int) dst.length;
+    auto p = dst.ptr + len;
+
+    do
+        *--p = info.numbers[i % info.radix];
+    while ((i /= info.radix) && --len);
+
+    auto prefix = (pre is '#') ? info.prefix : null;
+    if (len > prefix.length)
+    {
+        len -= prefix.length + 1;
+
+        // prefix number with zeros?
+        if (width)
         {
-            case 'd':
-            case 'D':
-            case 'g':
-            case 'G':
-                if (i_ < 0)
-                    index = FormatStyle.NegativeB10;
-                else if (pre is ' ')
-                    index = FormatStyle.JustifiedB10;
-                else if (pre is '+')
-                    index = FormatStyle.PositiveB10;
-                /// Otherwise, keep `FormatStyle.DefaultB10`
-                i = i_ >= 0 ? i_ : -i_;
-                pre = '#';
-                break;
-
-            case 'u':
-            case 'U':
-                i = reinterpretInteger!(ulong)(i_);
-                pre = '#';
-                break;
-
-            case 'b':
-            case 'B':
-                index = FormatStyle.Binary;
-                i = reinterpretInteger!(ulong)(i_);
-                break;
-
-            case 'o':
-            case 'O':
-                index = FormatStyle.Octal;
-                i = reinterpretInteger!(ulong)(i_);
-                break;
-
-            case 'x':
-                index = FormatStyle.LowercaseB16;
-                i = reinterpretInteger!(ulong)(i_);
-                break;
-
-            case 'X':
-                index = FormatStyle.UppercaseB16;
-                i = reinterpretInteger!(ulong)(i_);
-                break;
-
-            default:
-                immutable mlen = "{unknown format 'X'}".length;
-                if (dst.length < mlen)
-                    return "{unknown format}";
-                dst[0 .. mlen - 3] = "{unknown format '";
-                dst[mlen - 3] = type;
-                dst[mlen - 2 .. mlen] = "'}";
-                return dst;
-        }
-
-        auto info = &Styles[index];
-        auto numbers = info.numbers;
-        auto radix = info.radix;
-
-        // convert number to text
-        auto p = dst.ptr + len;
-
-        do
-            *--p = numbers[i % radix];
-        while ((i /= radix) && --len);
-
-        auto prefix = (pre is '#') ? info.prefix : null;
-        if (len > prefix.length)
-        {
-            len -= prefix.length + 1;
-
-            // prefix number with zeros?
-            if (width)
+            width = cast(int) (dst.length - width - prefix.length);
+            while (len > width && len > 0)
             {
-                width = cast(int) (dst.length - width - prefix.length);
-                while (len > width && len > 0)
-                {
-                    *--p = '0';
-                    --len;
-                }
+                *--p = '0';
+                --len;
             }
-            // write optional prefix string ...
-            dst [len .. len + prefix.length] = prefix;
-
-            // return slice of provided output buffer
-            return dst [len .. $];
         }
+        // write optional prefix string ...
+        dst[len .. len + prefix.length] = prefix;
+
+        // return slice of provided output buffer
+        return dst[len .. $];
     }
 
     return "{output width too small}";
