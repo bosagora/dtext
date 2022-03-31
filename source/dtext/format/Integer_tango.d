@@ -70,13 +70,12 @@ import std.traits;
 
 const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 {
-    char    pre,
-            type;
+    char    pre;
     int     width;
 
     assert(fmt.length > 0);
 
-    type = fmt[0];
+    const char type = fmt[0];
     if (fmt.length > 1)
     {
         auto p = &fmt[1];
@@ -95,6 +94,7 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
     if (!dst.length)
         return "{output width too small}";
 
+    bool usePrefix = (pre is '#');
     switch (type)
     {
         case 'd':
@@ -109,13 +109,13 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
                 index = FormatStyle.PositiveB10;
             /// Otherwise, keep `FormatStyle.DefaultB10`
             i = i_ >= 0 ? i_ : -i_;
-            pre = '#';
+            usePrefix = true;
             break;
 
         case 'u':
         case 'U':
             i = reinterpretInteger!(ulong)(i_);
-            pre = '#';
+            usePrefix = true;
             break;
 
         case 'b':
@@ -149,11 +149,10 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
             dst[mlen - 2 .. mlen] = "'}";
             return dst;
     }
-    return formatInternal(dst, i, Styles[index], pre, width);
+    return formatInternal(dst, i, Styles[index].fill(usePrefix, width));
 }
 
-private const(char)[] formatInternal
-    (char[] dst, ulong i, in FormatterInfo info, char pre, int width)
+private const(char)[] formatInternal (char[] dst, ulong i, in FormatterInfo info)
     @trusted pure nothrow @nogc
 {
     // convert number to text
@@ -164,15 +163,14 @@ private const(char)[] formatInternal
         *--p = info.numbers[i % info.radix];
     while ((i /= info.radix) && --len);
 
-    auto prefix = (pre is '#') ? info.prefix : null;
-    if (len > prefix.length)
+    if (len > info.prefix.length)
     {
-        len -= prefix.length + 1;
+        len -= info.prefix.length + 1;
 
         // prefix number with zeros?
-        if (width)
+        if (info.width)
         {
-            width = cast(int) (dst.length - width - prefix.length);
+            auto width = cast(int) (dst.length - info.width - info.prefix.length);
             while (len > width && len > 0)
             {
                 *--p = '0';
@@ -180,7 +178,7 @@ private const(char)[] formatInternal
             }
         }
         // write optional prefix string ...
-        dst[len .. len + prefix.length] = prefix;
+        dst[len .. len + info.prefix.length] = info.prefix;
 
         // return slice of provided output buffer
         return dst[len .. $];
@@ -233,9 +231,18 @@ private To reinterpretInteger (To, From) (From val)
 
 private struct FormatterInfo
 {
-    byte          radix;
     const(char)[] prefix;
     const(char)[] numbers;
+    int           width;
+    byte          radix;
+
+    ///
+    private FormatterInfo fill (bool usePrefix, int width)
+        const scope @safe pure nothrow @nogc
+    {
+        return FormatterInfo(usePrefix ? this.prefix : null,
+                             this.numbers, width, this.radix);
+    }
 }
 
 ///
@@ -260,14 +267,14 @@ public enum FormatStyle
 }
 
 private immutable FormatterInfo[FormatStyle.max + 1] Styles = [
-    FormatStyle.DefaultB10:   {  10, null, Lower},
-    FormatStyle.NegativeB10:  {  10, "-" , Lower},
-    FormatStyle.JustifiedB10: {  10, " " , Lower},
-    FormatStyle.PositiveB10:  {  10, "+" , Lower},
-    FormatStyle.Binary:       {   2, "0b", Lower},
-    FormatStyle.Octal:        {   8, "0o", Lower},
-    FormatStyle.LowercaseB16: {  16, "0x", Lower},
-    FormatStyle.UppercaseB16: {  16, "0X", Upper},
+    FormatStyle.DefaultB10:   { null, Lower, 0, 10, },
+    FormatStyle.NegativeB10:  { "-" , Lower, 0, 10, },
+    FormatStyle.JustifiedB10: { " " , Lower, 0, 10, },
+    FormatStyle.PositiveB10:  { "+" , Lower, 0, 10, },
+    FormatStyle.Binary:       { "0b", Lower, 0,  2, },
+    FormatStyle.Octal:        { "0o", Lower, 0,  8, },
+    FormatStyle.LowercaseB16: { "0x", Lower, 0, 16, },
+    FormatStyle.UppercaseB16: { "0X", Upper, 0, 16, },
 ];
 
 private immutable string Lower = "0123456789abcdef";
