@@ -28,10 +28,6 @@
 
 module dtext.format.Integer_tango;
 
-// import ocean.meta.types.Qualifiers;
-// import ocean.core.ExceptionDefinitions;
-// import ocean.core.Verify;
-// import ocean.meta.traits.Basic;
 import std.traits;
 
 /*******************************************************************************
@@ -74,9 +70,6 @@ import std.traits;
 
 const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 {
-    // static assert(isIntegerType!(N),
-    //               "Integer_tango.format only supports integers");
-
     char    pre,
             type;
     int     width;
