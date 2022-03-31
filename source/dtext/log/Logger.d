@@ -745,7 +745,7 @@ public final class Logger : ILogger
     {
         import std.datetime.systime;
 
-        if (this.host_.context.enabled(level_, level))
+        if (this.enabled(level))
         {
             const name = this.getOption(LogOption.FunctionOrigin) ? func :
                 (this.name_.length ? this.name_[0..$-1] : "root");
