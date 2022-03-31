@@ -137,10 +137,7 @@ package class Hierarchy : Logger.Context
         if (!label.length)
             return null;
 
-        return this.inject(
-            label,
-            (string name) { return new Logger(this, name); }
-            );
+        return this.inject(label);
     }
 
     /***************************************************************************
@@ -168,16 +165,13 @@ package class Hierarchy : Logger.Context
 
         Params:
           label = The label to look up
-          dg    = A delegate that will be called to instantiate the `Logger`
 
         Returns:
           A `Logger` instance matching `label`
 
     ***************************************************************************/
 
-    private Logger inject (
-        in char[] label,
-        scope Logger delegate (string name) dg)
+    private Logger inject (in char[] label)
     {
         // try not to allocate unless you really need to
         char[255] stack_buffer;
@@ -200,7 +194,7 @@ package class Hierarchy : Logger.Context
             name_.idup : assumeUnique(name_);
 
         // Create a new logger
-        auto li = dg(name);
+        auto li = new Logger(this, name);
         // insert into linked list
         this.insert(li);
         // Look for and adjust children. Don't force
