@@ -96,24 +96,8 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
         }
     }
 
-    static immutable string lower = "0123456789abcdef";
-    static immutable string upper = "0123456789ABCDEF";
-
-    alias _FormatterInfo!(immutable(char)) Info;
-
-    static immutable Info[] formats = [
-        { 10, null, lower},
-        { -10, "-" , lower},
-        { 10, " " , lower},
-        { 10, "+" , lower},
-        {  2, "0b", lower},
-        {  8, "0o", lower},
-        { 16, "0x", lower},
-        { 16, "0X", upper},
-    ];
-
     Unqual!N i = i_;
-    ubyte index;
+    FormatStyle index;
     int len = cast(int) dst.length;
 
     if (len)
@@ -125,13 +109,12 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
             case 'g':
             case 'G':
                 if (i < 0)
-                    index = 1;
-                else
-                    if (pre is ' ')
-                        index = 2;
-                    else
-                        if (pre is '+')
-                            index = 3;
+                    index = FormatStyle.NegativeB10;
+                else if (pre is ' ')
+                    index = FormatStyle.JustifiedB10;
+                else if (pre is '+')
+                    index = FormatStyle.PositiveB10;
+                /// Otherwise, keep `FormatStyle.DefaultB10`
                 goto case;
             case 'u':
             case 'U':
@@ -140,33 +123,32 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 
             case 'b':
             case 'B':
-                index = 4;
+                index = FormatStyle.Binary;
                 break;
 
             case 'o':
             case 'O':
-                index = 5;
+                index = FormatStyle.Octal;
                 break;
 
             case 'x':
-                index = 6;
+                index = FormatStyle.LowercaseB16;
                 break;
 
             case 'X':
-                index = 7;
+                index = FormatStyle.UppercaseB16;
                 break;
 
             default:
                 return "{unknown format '" ~ type ~ "'}";
         }
 
-        auto info = &formats[index];
+        auto info = &Styles[index];
         auto numbers = info.numbers;
         auto radix = info.radix;
 
         // convert number to text
         auto p = dst.ptr + len;
-
 
         // Base 10 formatting
         if (index <= 3 && index)
@@ -282,9 +264,44 @@ private To reinterpretInteger (To, From) (From val)
     }
 }
 
-private struct _FormatterInfo(T)
+private struct FormatterInfo
 {
-    byte    radix;
-    T[]     prefix;
-    T[]     numbers;
+    byte          radix;
+    const(char)[] prefix;
+    const(char)[] numbers;
 }
+
+///
+public enum FormatStyle
+{
+    /// Positive base 10 number
+    DefaultB10,
+    /// Negative base 10 number
+    NegativeB10,
+    /// Base 10 with optionally spaces before it to match a width
+    JustifiedB10,
+    // Base 10 with an explicit '+' in front
+    PositiveB10,
+    /// Binary representation (0..1)
+    Binary,
+    /// Octal representation (0..7)
+    Octal,
+    /// Lowercase hexadecimal representation (0...f)
+    LowercaseB16,
+    /// Uppercase hexadecimal representation (0...F)
+    UppercaseB16,
+}
+
+private immutable FormatterInfo[FormatStyle.max + 1] Styles = [
+    FormatStyle.DefaultB10:   {  10, null, Lower},
+    FormatStyle.NegativeB10:  { -10, "-" , Lower},
+    FormatStyle.JustifiedB10: {  10, " " , Lower},
+    FormatStyle.PositiveB10:  {  10, "+" , Lower},
+    FormatStyle.Binary:       {   2, "0b", Lower},
+    FormatStyle.Octal:        {   8, "0o", Lower},
+    FormatStyle.LowercaseB16: {  16, "0x", Lower},
+    FormatStyle.UppercaseB16: {  16, "0X", Upper},
+];
+
+private immutable string Lower = "0123456789abcdef";
+private immutable string Upper = "0123456789ABCDEF";
