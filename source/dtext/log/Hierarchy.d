@@ -165,7 +165,7 @@ package class Hierarchy : Logger.Context
 
         return this.inject(
             label,
-            (in char[] name) { return new Logger(this, name.idup); }
+            (string name) { return new Logger(this, name); }
             );
     }
 
@@ -187,13 +187,23 @@ package class Hierarchy : Logger.Context
 
     /***************************************************************************
 
-        Return the instance of a Logger with the provided label.
-        If the instance does not exist, it is created at this time.
+        Returns a Logger matching the provided label, inject if necessary.
+
+        This function will create (allocate/instantiate) the Logger
+        if necessary. However if the Logger already exists, it will be returned.
+
+        Params:
+          label = The label to look up
+          dg    = A delegate that will be called to instantiate the `Logger`
+
+        Returns:
+          A `Logger` instance matching `label`
 
     ***************************************************************************/
 
-    private Logger inject (in char[] label,
-                           scope Logger delegate(in char[] name) dg)
+    private Logger inject (
+        in char[] label,
+        scope Logger delegate (string name) dg)
     {
         // try not to allocate unless you really need to
         char[255] stack_buffer;
@@ -206,32 +216,26 @@ package class Hierarchy : Logger.Context
         buffer[label.length] = '.';
 
         auto name_ = buffer[0 .. label.length + 1];
-        const(char)[] name;
-        auto l = name_ in loggers;
+        if (auto pinstance = name_ in this.loggers)
+            return *pinstance;
 
-        if (l is null)
-        {
-            // don't use the stack allocated buffer
-            if (name_.ptr is stack_buffer.ptr)
-                name = idup(name_);
-            else
-                name = assumeUnique(name_);
-            // create a new logger
-            auto li = dg(name);
-            l = &li;
+        // We need a `string` for the associative array, as well as
+        // the `Logger`'s constructor, so make sure we do not use
+        // the stack allocated buffer.
+        string name = (name_.ptr is stack_buffer.ptr) ?
+            name_.idup : assumeUnique(name_);
 
-            // insert into linked list
-            insert (li);
+        // Create a new logger
+        auto li = dg(name);
+        // insert into linked list
+        this.insert(li);
+        // Look for and adjust children. Don't force
+        // property inheritance on existing loggers
+        this.update(li);
+        // Insert into map
+        this.loggers[name] = li;
 
-            // look for and adjust children. Don't force
-            // property inheritance on existing loggers
-            update (li);
-
-            // insert into map
-            loggers [name] = li;
-        }
-
-        return *l;
+        return li;
     }
 
     /***************************************************************************
