@@ -72,7 +72,7 @@ import std.traits;
 
  *******************************************************************************/
 
-const(char)[] format(N) (char[] dst, N i_, in char[] fmt = null)
+const(char)[] format(N) (char[] dst, N i_, in char[] fmt)
 {
     // static assert(isIntegerType!(N),
     //               "Integer_tango.format only supports integers");
@@ -81,21 +81,18 @@ const(char)[] format(N) (char[] dst, N i_, in char[] fmt = null)
             type;
     int     width;
 
-    if (fmt.length is 0)
-        type = 'd';
-    else
+    assert(fmt.length > 0);
+
+    type = fmt[0];
+    if (fmt.length > 1)
     {
-        type = fmt[0];
-        if (fmt.length > 1)
+        auto p = &fmt[1];
+        for (int j=1; j < fmt.length; ++j, ++p)
         {
-            auto p = &fmt[1];
-            for (int j=1; j < fmt.length; ++j, ++p)
-            {
-                if (*p >= '0' && *p <= '9')
-                    width = width * 10 + (*p - '0');
-                else
-                    pre = *p;
-            }
+            if (*p >= '0' && *p <= '9')
+                width = width * 10 + (*p - '0');
+            else
+                pre = *p;
         }
     }
 
