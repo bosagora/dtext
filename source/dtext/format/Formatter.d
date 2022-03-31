@@ -529,7 +529,7 @@ private void handle (T) (T v, FormatInfo f, scope FormatterSink sf, scope ElemSi
                     || is(T : const(dchar)[]))
     {
         if (f.flags & Flags.Nested) sf(`"`);
-        reencodeUTF(v, (in char[] val) { se(val, f); return val.length; });
+        reencodeUTF(v, (in char[] val) => se(val, f));
         if (f.flags & Flags.Nested) sf(`"`);
     }
     else static if (is(typeof((&v)[0 .. 1]) : const(char)[])
@@ -538,9 +538,9 @@ private void handle (T) (T v, FormatInfo f, scope FormatterSink sf, scope ElemSi
     {
         T[3] b = [ '\'', v, '\'' ];
         if (f.flags & Flags.Nested)
-            reencodeUTF(b, (in char[] val) { se(val, f); return val.length; });
+            reencodeUTF(b, (in char[] val) => se(val, f));
         else
-            reencodeUTF(b[1 .. 2], (in char[] val) { se(val, f); return val.length; });
+            reencodeUTF(b[1 .. 2], (in char[] val) => se(val, f));
     }
 
     // Signed integer
@@ -1162,13 +1162,13 @@ private template isInfinite (R)
 
 *******************************************************************************/
 
-public void reencodeUTF (const(char)[] input, scope size_t delegate(in char[]) dg)
+public void reencodeUTF (SinkT : FormatterSink) (const(char)[] input, scope SinkT dg)
 {
     dg(input);
 }
 
 /// Ditto
-public void reencodeUTF (const(wchar)[] input, scope size_t delegate(in char[]) dg)
+public void reencodeUTF (SinkT : FormatterSink) (const(wchar)[] input, scope SinkT dg)
 {
     char[4] buff;
     foreach (size_t idx, wchar c; input)
@@ -1194,7 +1194,7 @@ public void reencodeUTF (const(wchar)[] input, scope size_t delegate(in char[]) 
 }
 
 /// Ditto
-public void reencodeUTF (const(dchar)[] input, scope size_t delegate(in char[]) dg)
+public void reencodeUTF (SinkT : FormatterSink) (const(dchar)[] input, scope SinkT dg)
 {
     char[4] buff;
     foreach (size_t idx, dchar c; input)
